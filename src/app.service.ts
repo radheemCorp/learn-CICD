@@ -4,14 +4,15 @@ import {
   HttpStatus,
   Injectable,
 } from '@nestjs/common';
-import { User, Users } from './interface/User';
-import { SignUp } from './dto/sign-up.dto';
-import { UserList } from './dto/user-response.dto';
+import { User, Users } from './account-store/interface/User';
+import { SignUp } from './account-store/dto/sign-up.dto';
+import { UserList } from './account-store/dto/user-response.dto';
+import { AccountStoreService } from './account-store/account-store.service';
 
 @Injectable()
 export class AppService {
   userList: Users;
-  constructor() {
+  constructor(private readonly accountService: AccountStoreService) {
     this.userList = {
       'radheem@gmail.com': {
         username: 'radheem',
@@ -25,10 +26,10 @@ export class AppService {
     return 'Hello World!';
   }
 
-  @HttpCode(HttpStatus.CREATED)
+  // @HttpCode(HttpStatus.CREATED)
   async register(signUp: SignUp) {
     try {
-      this.userList[signUp.email] = { ...signUp };
+      this.accountService.addAccount(signUp.email, signUp);
     } catch (error) {
       throw new HttpException(
         `Error registering user: ${error}`,
@@ -36,14 +37,13 @@ export class AppService {
       );
     }
   }
+
   @HttpCode(HttpStatus.OK)
   async login(email: string, password: string): Promise<User> {
     try {
-      if (email in this.userList) {
-        if (password === this.userList[email].password) {
-          return this.userList[email];
-        }
-        throw new HttpException('incorrect password', HttpStatus.UNAUTHORIZED);
+      const user = this.accountService.getAccount(email);
+      if (user.password && user.password === password) {
+        return user;
       }
       throw new HttpException('User ont found', HttpStatus.UNAUTHORIZED);
     } catch (error) {
@@ -53,12 +53,8 @@ export class AppService {
       );
     }
   }
-  @HttpCode(HttpStatus.OK)
+  // @HttpCode(HttpStatus.OK)
   async getUsers(): Promise<UserList> {
-    const result = [];
-    for (const i of Object.keys(this.userList)) {
-      result.push(this.userList[i]);
-    }
-    return new UserList(result);
+    return this.accountService.listUsers();
   }
 }
