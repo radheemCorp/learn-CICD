@@ -1,0 +1,82 @@
+name: PR Checks
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  code-format:
+    name: Code Format
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        name: Setup Node.js
+        with:
+          node-version: '18.x'
+      - name: Setup yarn
+        run: npm install -g yarn
+      - run: yarn
+      - run: yarn ci:code-formatting
+  code-style:
+    name: Code Style
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        name: Setup Node.js
+        with:
+          node-version: '18.x'
+      - name: Setup yarn
+        run: npm install -g yarn
+      - run: yarn
+      - run: yarn ci:code-style
+  build-test:
+    name: build & test check
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        name: Setup Node.js
+        with:
+          node-version: '18.x'
+      - name: Setup yarn
+        run: npm install -g yarn
+      - run: yarn install --immutable
+      - run: yarn build
+      - run: yarn setup:env
+      - run: yarn test:integration
+      - run: yarn teardown:env
+    env:
+      MESSAGE_BROKER_URI: localhost:29091
+      CONSUMER_GROUP: notification-events-local
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASS: dtrade
+      TEST_DB_NAME: NotificationServiceDBTest
+      DB_POOL_MIN: 10
+      DB_POOL_MAX: 100
+      PRODUCER_USER_NOTIFICATION_EVENT_NAME: NotificationServiceUserNotifiation
+      PRODUCER_GLOBAL_NOTIFICATION_EVENT_NAME: NotificationServiceGlobalNotifiation
+      CONSUMER_USER_NOTIFICATION_TOPIC: user-notification-events
+      CONSUMER_GLOBAL_NOTIFICATION_TOPIC: global-notification-events
+
+  plan:
+    strategy:
+      matrix:
+        environment:
+          - arbitrum-staging
+      fail-fast: false
+    concurrency:
+      group: 'terraform-${{ matrix.environment }}-${{ github.ref_name }}'
+    name: Infra Plan
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v2
+      - uses: polyform-io/actions-platform-deployer@main
+        env:
+          TF_VAR_image: 'potentially-a-new-image:potentially-new-tag'
+        with:
+          target_environment: '${{ matrix.environment }}'
+          action_type: 'plan'
