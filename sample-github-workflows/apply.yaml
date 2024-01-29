@@ -1,0 +1,62 @@
+name: Apply Changes
+
+on:
+  push:
+    branches: [main]
+    tags:
+      - release-*
+
+jobs:
+  push-image:
+    name: Push Image
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v2
+      - name: 'Docker'
+        id: docker-build
+        run: |
+          if echo ${GITHUB_REF} | grep -q "refs/tags/release-"; then
+            IMAGE_TAG=$(echo ${GITHUB_REF} | grep -oP 'refs/tags/\K(.*)')
+          else
+            IMAGE_TAG=${GITHUB_SHA::7}
+          fi
+          ecr-login
+          IMAGE_NAME=933409076615.dkr.ecr.us-east-1.amazonaws.com/$(basename $GITHUB_REPOSITORY):$IMAGE_TAG
+          docker buildx build -f Dockerfile -t $IMAGE_NAME --load .
+          docker push $IMAGE_NAME
+          echo "image=$IMAGE_NAME" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    outputs:
+      image: ${{ steps.docker-build.outputs.image }}
+
+  apply-infra-staging:
+    needs: [push-image]
+    strategy:
+      matrix:
+        environment:
+          - arbitrum-staging
+      fail-fast: false
+    concurrency:
+      group: 'terraform-${{ matrix.environment }}'
+    name: Deploy to ${{ matrix.environment }}
+    runs-on: self-hosted
+    environment: '${{ matrix.environment }}'
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set Node.js 16.x
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16.x
+      - name: Run install
+        uses: borales/actions-yarn@v4
+        with:
+          cmd: install # will run `yarn install` command.
+      - run: yarn
+      - uses: sageforge/github-actions-terragrunt@0.0.1
+        id: apply
+        env:
+          TF_VAR_image: '${{ needs.push-image.outputs.image }}'
+        with:
+          target_environment: '${{ matrix.environment }}'
+          action_type: 'apply'
