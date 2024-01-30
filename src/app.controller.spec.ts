@@ -2,6 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { SignUp } from './account-store/dto/sign-up.dto';
+import { AccountStoreModule } from './account-store/account-store.module';
+import { AccountStoreService } from './account-store/account-store.service';
 
 describe('AppController', () => {
   let appController: AppController;
@@ -12,8 +14,9 @@ describe('AppController', () => {
   };
   beforeEach(async () => {
     const app: TestingModule = await Test.createTestingModule({
+      imports: [AccountStoreModule],
       controllers: [AppController],
-      providers: [AppService],
+      providers: [AppService, AccountStoreService],
     }).compile();
 
     appController = app.get<AppController>(AppController);

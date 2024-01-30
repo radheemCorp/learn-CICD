@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { User, Users } from 'src/account-store/interface/User';
+import { User, Users } from './interface/User';
 import * as fs from 'fs';
-import { UserList } from 'src/account-store/dto/user-response.dto';
+import { UserList } from './dto/user-response.dto';
 
 @Injectable()
 export class AccountStoreService {
