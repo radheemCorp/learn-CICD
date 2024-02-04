@@ -28,4 +28,4 @@ RUN adduser -D radheem
 # Switching to the non-root user
 USER radheem
 
-CMD ["sh", "-c", "yarn start:prod"]
+CMD ["sh", "-c", "node dist/main"]

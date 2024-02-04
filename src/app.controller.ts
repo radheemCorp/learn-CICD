@@ -2,7 +2,6 @@ import { Body, Controller, Get, Post } from '@nestjs/common';
 import { AppService } from './app.service';
 import { SignUp } from './account-store/dto/sign-up.dto';
 import { User } from './account-store/interface/User';
-import { UserList } from './account-store/dto/user-response.dto';
 
 @Controller()
 export class AppController {
@@ -20,11 +19,11 @@ export class AppController {
 
   @Post('login')
   async login(@Body() user: User): Promise<User> {
-    return await this.appService.login(user.email, user.password);
+    return await this.appService.login(user.username, user.password);
   }
 
   @Get('users')
-  async getUsers(): Promise<UserList> {
+  async getUsers(): Promise<string[]> {
     return await this.appService.getUsers();
   }
 }

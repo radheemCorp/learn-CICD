@@ -1,28 +1,27 @@
 import { Injectable } from '@nestjs/common';
-import { User, Users } from './interface/User';
+import { User } from './interface/User';
 import * as fs from 'fs';
-import { UserList } from './dto/user-response.dto';
 
 @Injectable()
 export class AccountStoreService {
-  private users: Users;
-  private filePath: string;
+  private users: Map<string, User> = new Map();
+  private filePath: string = `${__dirname}/accountStore.json`;
   constructor() {
-    this.filePath = 'src/accountStore.json';
-    if (this.filePath && this.fileExists(this.filePath)) {
-      const resp = this.initAccountStore();
-      if (!resp) {
-        throw new Error('Error: File not Found or parsing JSON file');
-      }
-    }
+    this.users = this.users.set('root', {
+      username: 'root',
+      email: 'root@email.com',
+      password: 'root',
+    });
   }
-  private fileExists(filePath: string) {
+  private fileExists(filePath: string): boolean {
     return fs.existsSync(filePath);
   }
-  public initAccountStore() {
+  public initAccountStore(): boolean {
     try {
       const fileContent = fs.readFileSync(this.filePath, 'utf-8');
-      this.users = JSON.parse(fileContent);
+      if (fileContent.length > 0) {
+        this.users = JSON.parse(fileContent);
+      }
       return true;
     } catch (error) {
       console.error('Error reading the file:', error);
@@ -30,7 +29,7 @@ export class AccountStoreService {
     }
   }
 
-  public saveAccountStore() {
+  public saveAccountStore(): boolean {
     try {
       fs.writeFileSync(
         this.filePath,
@@ -44,27 +43,23 @@ export class AccountStoreService {
     }
   }
 
-  public getAccount(email: string) {
-    if (this.users && email in this.users) {
-      return this.users[email];
-    } else {
-      throw Error('User not Found');
+  public getAccount(email: string): User {
+    try {
+      return this.users.get(email);
+    } catch (e) {
+      throw Error('User not found');
     }
   }
 
-  public addAccount(email: string, userData: User) {
-    if (this.users && email in this.users) {
+  public addAccount(username: string, userData: User): string {
+    if (this.users.has(username)) {
       throw Error('User already exists');
     } else {
-      this.users[email] = userData;
-      return;
+      this.users.set(username, userData);
+      return 'Account registered';
     }
   }
-  public listUsers() {
-    const result = [];
-    for (const i of Object.keys(this.users)) {
-      result.push(this.users[i]);
-    }
-    return new UserList(result);
+  public listUsers(): string[] {
+    return Array.from(this.users.keys());
   }
 }
