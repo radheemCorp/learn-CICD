@@ -1,17 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { User } from './interface/User';
 import * as fs from 'fs';
+import { rootUser } from '../app.constants';
 
 @Injectable()
 export class AccountStoreService {
   private users: Map<string, User> = new Map();
   private filePath: string = `${__dirname}/accountStore.json`;
   constructor() {
-    this.users = this.users.set('root', {
-      username: 'root',
-      email: 'root@email.com',
-      password: 'root',
-    });
+    this.users = this.users.set('root', rootUser);
   }
   private fileExists(filePath: string): boolean {
     return fs.existsSync(filePath);

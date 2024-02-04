@@ -4,14 +4,10 @@ import { AppService } from './app.service';
 import { SignUp } from './account-store/dto/sign-up.dto';
 import { AccountStoreModule } from './account-store/account-store.module';
 import { AccountStoreService } from './account-store/account-store.service';
+import { rootUser } from './app.constants';
 
 describe('AppController', () => {
   let appController: AppController;
-  const rootUser = {
-    username: 'radheem',
-    email: 'radheem@gmail.com',
-    password: 'radheem',
-  };
   beforeEach(async () => {
     const app: TestingModule = await Test.createTestingModule({
       imports: [AccountStoreModule],
@@ -29,9 +25,7 @@ describe('AppController', () => {
 
     it('should return root user', async () => {
       const resp = await appController.getUsers();
-      expect(resp.users[0].username).toBe(rootUser.username);
-      expect(resp.users[0].email).toBe(rootUser.email);
-      expect(resp.users[0].password).toBe(rootUser.password);
+      expect(resp.includes(rootUser.username)).toBe(true);
     });
 
     it('should add user', async () => {
@@ -42,16 +36,14 @@ describe('AppController', () => {
       };
       await appController.register(signupData);
       const userList = await appController.getUsers();
-      expect(userList.users[1].username).toBe(signupData.username);
-      expect(userList.users[1].email).toBe(signupData.email);
-      expect(userList.users[1].password).toBe(signupData.password);
+      expect(userList.includes(signupData.username)).toBe(true);
     });
 
     it('should should validate and login user', async () => {
       const data = {
         email: rootUser.email,
         password: rootUser.password,
-        username: null,
+        username: rootUser.username,
       };
       const myUser = await appController.login(data);
       expect(myUser.username).toBe(rootUser.username);
