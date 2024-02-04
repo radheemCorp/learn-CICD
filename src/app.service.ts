@@ -4,23 +4,13 @@ import {
   HttpStatus,
   Injectable,
 } from '@nestjs/common';
-import { User, Users } from './account-store/interface/User';
+import { User } from './account-store/interface/User';
 import { SignUp } from './account-store/dto/sign-up.dto';
-import { UserList } from './account-store/dto/user-response.dto';
 import { AccountStoreService } from './account-store/account-store.service';
 
 @Injectable()
 export class AppService {
-  userList: Users;
-  constructor(private readonly accountService: AccountStoreService) {
-    this.userList = {
-      'radheem@gmail.com': {
-        username: 'radheem',
-        email: 'radheem@gmail.com',
-        password: 'radheem',
-      },
-    };
-  }
+  constructor(private readonly accountService: AccountStoreService) {}
 
   getHello(): string {
     return 'Hello World!';
@@ -29,7 +19,7 @@ export class AppService {
   // @HttpCode(HttpStatus.CREATED)
   async register(signUp: SignUp) {
     try {
-      this.accountService.addAccount(signUp.email, signUp);
+      return this.accountService.addAccount(signUp.username, signUp);
     } catch (error) {
       throw new HttpException(
         `Error registering user: ${error}`,
@@ -42,19 +32,22 @@ export class AppService {
   async login(email: string, password: string): Promise<User> {
     try {
       const user = this.accountService.getAccount(email);
-      if (user.password && user.password === password) {
+      if (user && user.password === password) {
         return user;
       }
       throw new HttpException('User ont found', HttpStatus.UNAUTHORIZED);
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
       throw new HttpException(
-        `Error logging in error:${error}`,
+        `Error:${error}`,
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }
   // @HttpCode(HttpStatus.OK)
-  async getUsers(): Promise<UserList> {
+  async getUsers(): Promise<string[]> {
     return this.accountService.listUsers();
   }
 }

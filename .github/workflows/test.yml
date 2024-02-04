@@ -2,24 +2,44 @@ name: Run Tests on PR Merge
 
 on:
   pull_request:
-    types:
-      - opened
+    branches: [main]
 
-jobs:
-  test:
-    runs-on: ubuntu-latest
-
+jobs:  
+  build:
+    name: build-lint check
+    runs-on: self-hosted
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        name: Setup Node.js
+        with:
+          node-version: '21.x'
+      - name: Setup yarn and dependencies
+        run: npm install -g yarn
+      - run: yarn install --immutable
+      - run: yarn build
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: 21
+      - name: run linter
+        run: yarn lint
+      
+  test:
+    name: test check
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        name: Setup Node.js
+        with:
+          node-version: '21.x'
+          
+      - name: Setup yarn and dependencies
+        run: npm install -g yarn
+      - run: yarn install --immutable
+      - run: yarn build
+      
+      - name: Run unit tests
+        run: yarn test:unit
+      
 
-    - name: Install dependencies
-      run: npm install
 
-    - name: Run unit tests
-      run: npm run test
+  

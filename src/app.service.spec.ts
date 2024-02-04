@@ -1,17 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppService } from './app.service';
 import { SignUp } from './account-store/dto/sign-up.dto';
-
+import { AccountStoreModule } from './account-store/account-store.module';
+import { AccountStoreService } from './account-store/account-store.service';
+import { rootUser } from './app.constants';
 describe('HilalUserService', () => {
   let service: AppService;
-  const rootUser = {
-    username: 'radheem',
-    email: 'radheem@gmail.com',
-    password: 'radheem',
-  };
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [AppService],
+      imports: [AccountStoreModule],
+      providers: [AppService, AccountStoreService],
     }).compile();
 
     service = module.get<AppService>(AppService);
@@ -23,9 +21,8 @@ describe('HilalUserService', () => {
 
   it('should return root user', async () => {
     const resp = await service.getUsers();
-    expect(resp.users[0].username).toBe(rootUser.username);
-    expect(resp.users[0].email).toBe(rootUser.email);
-    expect(resp.users[0].password).toBe(rootUser.password);
+    console.log(resp);
+    expect(resp.includes(rootUser.username)).toBe(true);
   });
 
   it('should add user', async () => {
@@ -36,13 +33,11 @@ describe('HilalUserService', () => {
     };
     await service.register(signupData);
     const userList = await service.getUsers();
-    expect(userList.users[1].username).toBe(signupData.username);
-    expect(userList.users[1].email).toBe(signupData.email);
-    expect(userList.users[1].password).toBe(signupData.password);
+    expect(userList.includes(signupData.username)).toBe(true);
   });
 
   it('should should validate and login user', async () => {
-    const myUser = await service.login(rootUser.email, rootUser.password);
+    const myUser = await service.login(rootUser.username, rootUser.password);
     expect(myUser.username).toBe(rootUser.username);
   });
 });
