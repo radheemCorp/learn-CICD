@@ -1,5 +1,5 @@
 name: Run Tests on PR Merge
-
+run-name: runner name ${{github.actor}} 
 on:
   pull_request:
     branches: [main]
@@ -7,7 +7,7 @@ on:
 jobs:  
   build:
     name: build-lint check
-    runs-on: self-hosted
+    runs-on: ubuntu-latest 
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
@@ -24,7 +24,7 @@ jobs:
       
   test:
     name: test check
-    runs-on: self-hosted
+    runs-on: ubuntu-latest 
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

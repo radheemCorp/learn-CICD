@@ -10,11 +10,12 @@ on:
 jobs:
   build:
     name: build-lint check
-    runs-on: self-hosted
+    runs-on: ubuntu-latest 
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        name: Setup Node.js
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '21.x'
       - name: Setup yarn and dependencies
@@ -27,45 +28,33 @@ jobs:
   docker:
     runs-on: ubuntu-latest
     steps:
-      -
-        name: Checkout
+      - name: Checkout
         uses: actions/checkout@v4
-      -
-        name: Set up QEMU
+      
+      - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
-      -
-        name: Set up Docker Buildx
+      
+      - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      -
-        name: Login to Docker Hub
+      
+      - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-      -
-        name: Build and push
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
+        with:
+          images: radheemdocker/learn1_ci_cd
+  
+      - name: Build and push
         uses: docker/build-push-action@v5
         with:
           context: .
+          file: ./Dockerfile
           push: true
-          tags: user/app:latest
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
 
-      - name: SSH into EC2 instance and pull the Docker image
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USERNAME }}
-          key: ${{ secrets.EC2_PRIVATE_KEY }}
-          script: |
-            docker pull $ECR_REGISTRY/$IMAGE_NAME:$TAG
-
-      - name: Run Docker container on EC2 instance
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USERNAME }}
-          key: ${{ secrets.EC2_PRIVATE_KEY }}
-          script: |
-            docker stop your-container-name || true
-            docker rm your-container-name || true
-            docker run -d -p 8080:8080 --name your-container-name $ECR_REGISTRY/$IMAGE_NAME:$TAG
